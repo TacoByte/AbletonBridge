@@ -33,11 +33,11 @@ store_lock: threading.Lock = threading.Lock()
 # Dashboard / telemetry state
 # ---------------------------------------------------------------------------
 server_start_time: float = 0.0
-tool_call_log: deque = deque(maxlen=50)
+tool_call_log: deque = deque(maxlen=500)
 tool_call_counts: Dict[str, int] = {}
 tool_call_lock: threading.Lock = threading.Lock()
 dashboard_server: Optional[Any] = None  # uvicorn.Server | None
-server_log_buffer: deque = deque(maxlen=200)
+server_log_buffer: deque = deque(maxlen=1000)
 server_log_lock: threading.Lock = threading.Lock()
 
 # ---------------------------------------------------------------------------

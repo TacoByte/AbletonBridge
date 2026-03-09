@@ -1,8 +1,11 @@
 """Grid notation tool handlers for AbletonBridge."""
+import logging
 from mcp.server.fastmcp import Context
 from MCP_Server.tools._base import _tool_handler
 from MCP_Server.connections.ableton import get_ableton_connection
 from MCP_Server.validation import _validate_index
+
+logger = logging.getLogger("AbletonBridge")
 
 
 def register_tools(mcp):
@@ -85,8 +88,8 @@ def register_tools(mcp):
                 "clip_index": clip_index,
                 "length": length,
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("create_clip pre-step failed (may already exist): %s", e)
 
         # Clear existing notes if requested
         if clear_existing:
@@ -95,8 +98,8 @@ def register_tools(mcp):
                     "track_index": track_index,
                     "clip_index": clip_index,
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("clear_clip_notes failed: %s", e)
 
         # Add the parsed notes
         ableton.send_command("add_notes_to_clip", {

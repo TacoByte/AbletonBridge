@@ -95,8 +95,8 @@ def register_tools(mcp):
             ableton.send_command("set_track_name", {
                 "track_index": track_idx, "name": name
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("set_track_name failed: %s", e)
 
         # Step 4: Set track color (if specified)
         if color_index >= 0:
@@ -104,8 +104,8 @@ def register_tools(mcp):
                 ableton.send_command("set_track_color", {
                     "track_index": track_idx, "color_index": color_index
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("set_track_color failed: %s", e)
 
         return json.dumps({
             "track_index": track_idx,
@@ -165,8 +165,8 @@ def register_tools(mcp):
                     "clip_index": clip_index,
                     "name": clip_name,
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("set_clip_name failed: %s", e)
 
         return json.dumps({
             "track_index": track_index,
@@ -222,8 +222,8 @@ def register_tools(mcp):
                 "name": name,
                 "track_type": "return",
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("set_track_name (return) failed: %s", e)
 
         # Step 4: Set send levels on source tracks
         sends_set = 0
@@ -465,7 +465,8 @@ def register_tools(mcp):
                     "track_type": track_type,
                 })
                 dev_info["parameters"] = params.get("parameters", [])
-            except Exception:
+            except Exception as e:
+                logger.debug("get_device_parameters failed for device %d: %s", i, e)
                 dev_info["parameters"] = []
             chain_data.append(dev_info)
 
@@ -637,8 +638,8 @@ def register_tools(mcp):
             ableton.send_command("set_track_name", {
                 "track_index": track_idx, "name": name
             })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("set_track_name failed: %s", e)
 
         # Step 4: Create clip
         ableton.send_command("create_clip", {

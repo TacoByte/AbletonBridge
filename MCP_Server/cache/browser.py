@@ -105,6 +105,15 @@ def load_browser_cache_from_disk() -> bool:
     Returns True if a valid, non-stale disk cache was loaded.
     """
     try:
+        # Clean up stale .tmp file from a previous interrupted save
+        tmp_path = BROWSER_DISK_CACHE_PATH + ".tmp"
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+                logger.info("Cleaned up stale browser cache .tmp file")
+            except OSError:
+                pass
+
         cache_path = None
         if os.path.exists(BROWSER_DISK_CACHE_PATH):
             cache_path = BROWSER_DISK_CACHE_PATH
@@ -253,7 +262,7 @@ def populate_browser_cache(force: bool = False) -> bool:
                         queue.append((item_path, depth + 1))
 
                 # Rate-limit to avoid overwhelming Ableton's socket handler
-                time.sleep(0.05)
+                time.sleep(0.01)
 
             by_display[display_name] = category_items
             logger.info("Browser cache: '%s' — %d items", display_name, len(category_items))

@@ -106,7 +106,11 @@ class AbletonConnection:
                     line, self._recv_buffer = self._recv_buffer.split('\n', 1)
                     line = line.strip()
                     if line:
-                        result = json.loads(line)
+                        try:
+                            result = json.loads(line)
+                        except json.JSONDecodeError:
+                            logger.error("Malformed JSON from Ableton (first 200 chars): %s", line[:200])
+                            raise
                         logger.debug("Received complete response (%d chars)", len(line))
                         return result
 

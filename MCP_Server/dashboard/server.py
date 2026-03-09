@@ -68,11 +68,8 @@ def get_server_version() -> str:
         from importlib.metadata import version as _pkg_version
         return _pkg_version("ableton-bridge")
     except Exception:
-        try:
-            from MCP_Server import __version__
-            return __version__
-        except Exception:
-            return "3.1.0"
+        from MCP_Server import __version__
+        return __version__
 
 
 def get_m4l_status() -> tuple:
@@ -87,7 +84,8 @@ def get_m4l_status() -> tuple:
 
     try:
         result = state.m4l_connection.ping()
-    except Exception:
+    except Exception as e:
+        logger.debug("Dashboard M4L ping failed: %s", e)
         result = False
 
     state.m4l_ping_cache["result"] = result

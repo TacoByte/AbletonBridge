@@ -464,7 +464,10 @@ class M4LConnection:
                             except socket.timeout:
                                 raise Exception(f"Timeout waiting for correct M4L response (expected {request_id})")
                         else:
-                            logger.error("Could not find matching M4L response after 5 drains (expected %s)", request_id)
+                            raise Exception(
+                                f"M4L response ID mismatch: expected {request_id}, "
+                                f"could not find matching response after 5 drain attempts"
+                            )
                     return result
                 except socket.timeout:
                     logger.warning("M4L response timeout (attempt %d)", attempt)
@@ -476,6 +479,8 @@ class M4LConnection:
 
     def send_command_with_retry(self, command_type: str, params: Dict[str, Any] = None, timeout: float = None, max_attempts: int = 3) -> Dict[str, Any]:
         """Send command with retry logic for 'busy' responses from M4L bridge."""
+        if max_attempts <= 0:
+            raise ValueError("max_attempts must be a positive integer")
         last_result = None
         for attempt in range(max_attempts):
             result = self.send_command(command_type, params, timeout)
@@ -486,6 +491,7 @@ class M4LConnection:
                 last_result = result
                 continue
             return result
+        logger.error("M4L bridge remained busy after %d attempts for '%s'", max_attempts, command_type)
         return last_result
 
     @staticmethod
@@ -612,7 +618,8 @@ class M4LConnection:
             if success:
                 self._check_bridge_version(result)
             return success
-        except Exception:
+        except Exception as e:
+            logger.debug("M4L ping failed: %s", e)
             return False
 
     @staticmethod

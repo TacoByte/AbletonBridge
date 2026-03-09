@@ -619,7 +619,20 @@ class AbletonBridge(ControlSurface):
         """Called when Ableton closes or the control surface is removed"""
         self.log_message("AbletonBridge disconnecting...")
         self.running = False
+
+        # Close UDP socket FIRST to unblock recvfrom(), THEN clear the flag.
+        # The UDP thread's exception handler checks udp_running, so it will
+        # exit silently when it sees the flag is False.
+        if self.udp_sock:
+            try:
+                self.udp_sock.close()
+            except (OSError, socket.error):
+                pass
+            self.udp_sock = None
         self.udp_running = False
+
+        if self.udp_thread and self.udp_thread.is_alive():
+            self.udp_thread.join(3.0)
 
         # Close all client sockets so their threads can exit
         with self._client_lock:
@@ -635,12 +648,8 @@ class AbletonBridge(ControlSurface):
             except (OSError, socket.error):
                 pass
 
-        # Stop the server
+        # Stop the listening server socket (no shutdown needed for listening sockets)
         if self.server:
-            try:
-                self.server.shutdown(socket.SHUT_RDWR)
-            except (OSError, socket.error):
-                pass
             try:
                 self.server.close()
             except (OSError, socket.error):
@@ -656,17 +665,6 @@ class AbletonBridge(ControlSurface):
         for client_thread in threads_to_join:
             if client_thread.is_alive():
                 client_thread.join(3.0)
-
-        # Close UDP socket
-        if self.udp_sock:
-            try:
-                self.udp_sock.close()
-            except (OSError, socket.error):
-                pass
-            self.udp_sock = None
-
-        if self.udp_thread and self.udp_thread.is_alive():
-            self.udp_thread.join(3.0)
 
         ControlSurface.disconnect(self)
         self.log_message("AbletonBridge disconnected")
@@ -864,7 +862,9 @@ class AbletonBridge(ControlSurface):
 
                         # Small breathing room between consecutive commands to prevent
                         # flooding Ableton's main thread scheduler during rapid bursts.
-                        time.sleep(0.005)
+                        # The MCP server serializes tool calls via asyncio semaphore,
+                        # so 1ms is sufficient to yield the thread.
+                        time.sleep(0.001)
 
                     # 1MB safety limit
                     if len(buffer) > 1048576:
